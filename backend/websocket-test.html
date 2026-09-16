@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+
+<h2>WebSocket Test</h2>
+
+<p id="status">Connecting...</p>
+
+<script>
+const ws = new WebSocket(
+    "ws://localhost:8080/api/polls/6aaa89381dd0f4d768cbf3d2/ws"
+);
+
+ws.onopen = function () {
+    document.getElementById("status").innerText =
+        "WebSocket Connected";
+    console.log("WebSocket connected");
+};
+
+ws.onmessage = function (event) {
+    console.log("Live update:", event.data);
+};
+
+ws.onerror = function (error) {
+    document.getElementById("status").innerText =
+        "WebSocket Error";
+    console.log("WebSocket error:", error);
+};
+
+ws.onclose = function () {
+    document.getElementById("status").innerText =
+        "WebSocket Disconnected";
+};
+</script>
+
+</body>
+</html>
