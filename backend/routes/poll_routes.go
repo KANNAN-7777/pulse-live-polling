@@ -13,6 +13,7 @@ func PollRoutes(router *gin.Engine) {
 	polls := router.Group("/api/polls")
 
 	polls.POST("/", middleware.AuthMiddleware(), controllers.CreatePoll)
+	polls.GET("/my", middleware.AuthMiddleware(), controllers.GetMyPolls)
 	polls.POST("/vote", controllers.Vote)
 	polls.GET("/:id/ws", pollws.HandlePollWebSocket)
 	polls.GET("/:id", controllers.GetPoll)

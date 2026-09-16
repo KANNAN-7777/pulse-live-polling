@@ -1,17 +1,59 @@
 package controllers
 
-import (
-	"context"
-	"net/http"
-	"strings"
-	"time"
+func GetMyPolls(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
 
-	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/v2/bson"
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
+		})
+		return
+	}
 
-	"live-poll/backend/config"
-	"live-poll/backend/models"
-)
+	userID, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Invalid user",
+		})
+		return
+	}
+
+	cursor, err := config.DB.Collection("polls").Find(
+		context.Background(),
+		bson.M{
+			"created_by": userID,
+		},
+		options.Find().SetSort(bson.D{
+			{Key: "created_at", Value: -1},
+		}),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Unable to fetch polls",
+		})
+		return
+	}
+
+	defer cursor.Close(context.Background())
+
+	var polls []models.Poll
+
+	if err := cursor.All(context.Background(), &polls); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Unable to read polls",
+		})
+		return
+	}
+
+	if polls == nil {
+		polls = []models.Poll{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"polls": polls,
+	})
+}
 
 type CreatePollRequest struct {
 	Question string   `json:"question"`
@@ -101,59 +143,57 @@ func CreatePoll(c *gin.Context) {
 	})
 }
 
-func GetPoll(c *gin.Context) {
-	pollID := c.Param("id")
+func GetMyPolls(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
 
-	pollObjectID, err := bson.ObjectIDFromHex(pollID)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid poll ID",
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
 		})
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := config.DB.Collection("polls")
-
-	var poll models.Poll
-
-	err = collection.FindOne(
-		ctx,
-		bson.M{"_id": pollObjectID},
-	).Decode(&poll)
-
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "Poll not found",
+	userID, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Invalid user",
 		})
 		return
 	}
 
-	voteCollection := config.DB.Collection("votes")
+	cursor, err := config.DB.Collection("polls").Find(
+		context.Background(),
+		bson.M{
+			"created_by": userID,
+		},
+		options.Find().SetSort(bson.D{
+			{Key: "created_at", Value: -1},
+		}),
+	)
 
-	for i := range poll.Options {
-		count, err := voteCollection.CountDocuments(
-			ctx,
-			bson.M{
-				"poll_id":  pollID,
-				"option_id": poll.Options[i].ID,
-			},
-		)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Unable to fetch polls",
+		})
+		return
+	}
 
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to count votes",
-			})
-			return
-		}
+	defer cursor.Close(context.Background())
 
-		poll.Options[i].Votes = int(count)
+	var polls []models.Poll
+
+	if err := cursor.All(context.Background(), &polls); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Unable to read polls",
+		})
+		return
+	}
+
+	if polls == nil {
+		polls = []models.Poll{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"poll": poll,
+		"polls": polls,
 	})
 }

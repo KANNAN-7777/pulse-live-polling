@@ -1,16 +1,34 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    Boolean(localStorage.getItem("token"))
+  );
 
-  const token = localStorage.getItem("token");
+  useEffect(() => {
+    const syncAuthState = () => {
+      setIsLoggedIn(Boolean(localStorage.getItem("token")));
+    };
+
+    window.addEventListener("storage", syncAuthState);
+    window.addEventListener("authChanged", syncAuthState);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener("authChanged", syncAuthState);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    setIsLoggedIn(false);
     setMenuOpen(false);
+    window.dispatchEvent(new Event("authChanged"));
+    navigate("/login");
   };
 
   const navLinkClass = ({ isActive }) =>
@@ -44,10 +62,15 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-
           <NavLink to="/" className={navLinkClass}>
             Home
           </NavLink>
+
+          {isLoggedIn && (
+            <NavLink to="/dashboard" className={navLinkClass}>
+              My Polls
+            </NavLink>
+          )}
 
           <a
             href="/#demo"
@@ -69,12 +92,10 @@ const Navbar = () => {
           >
             How it works
           </a>
-
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-
-          {token ? (
+          {isLoggedIn ? (
             <>
               <button
                 onClick={handleLogout}
@@ -114,7 +135,6 @@ const Navbar = () => {
               </Link>
             </>
           )}
-
         </div>
 
         <button
@@ -141,16 +161,14 @@ const Navbar = () => {
             />
           </div>
         </button>
-
       </nav>
 
       <div
         className={`overflow-hidden border-t border-white/5 bg-[#080808] transition-all duration-300 md:hidden ${
-          menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          menuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="space-y-2 px-6 py-5">
-
           <NavLink
             to="/"
             onClick={() => setMenuOpen(false)}
@@ -164,6 +182,22 @@ const Navbar = () => {
           >
             Home
           </NavLink>
+
+          {isLoggedIn && (
+            <NavLink
+              to="/dashboard"
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                `block rounded-xl px-4 py-3 transition ${
+                  isActive
+                    ? "bg-yellow-400/10 text-yellow-400"
+                    : "text-gray-400 hover:bg-white/5 hover:text-white"
+                }`
+              }
+            >
+              My Polls
+            </NavLink>
+          )}
 
           <a
             href="/#demo"
@@ -191,7 +225,7 @@ const Navbar = () => {
 
           <div className="my-3 h-px bg-gray-800" />
 
-          {token ? (
+          {isLoggedIn ? (
             <>
               <Link
                 to="/create"
@@ -235,7 +269,6 @@ const Navbar = () => {
               </Link>
             </>
           )}
-
         </div>
       </div>
     </header>
@@ -243,3 +276,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

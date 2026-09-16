@@ -1,9 +1,11 @@
+
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 
 function Vote() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [poll, setPoll] = useState(null);
   const [selected, setSelected] = useState("");
@@ -54,6 +56,10 @@ function Vote() {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
@@ -77,9 +83,16 @@ function Vote() {
             Poll unavailable
           </h1>
 
-          <p className="text-gray-500">
+          <p className="text-gray-500 mb-6">
             {error}
           </p>
+
+          <button
+            onClick={handleBack}
+            className="px-6 py-3 rounded-xl border border-[#292929] text-gray-300 hover:border-[#FFD21F]/50 hover:text-[#FFD21F] transition"
+          >
+            ← Go Back
+          </button>
         </div>
       </div>
     );
@@ -93,6 +106,13 @@ function Vote() {
 
       <main className="relative min-h-screen flex items-center justify-center px-5 py-16">
         <div className="w-full max-w-2xl">
+
+          <button
+            onClick={handleBack}
+            className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-[#FFD21F] transition"
+          >
+            ← Back
+          </button>
 
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#FFD21F]/30 bg-[#FFD21F]/5 text-[#FFD21F] text-xs font-semibold tracking-widest">
@@ -188,23 +208,41 @@ function Vote() {
             )}
 
             {message && (
-              <div className="mt-6 rounded-xl border border-[#FFD21F]/20 bg-[#FFD21F]/5 px-4 py-3 text-sm text-[#FFD21F]">
-                ✓ {message}
+              <div className="mt-6">
+                <div className="rounded-xl border border-[#FFD21F]/20 bg-[#FFD21F]/5 px-4 py-3 text-sm text-[#FFD21F]">
+                  ✓ {message}
+                </div>
+
+                <Link
+                  to={`/results/${id}`}
+                  className="mt-4 w-full flex items-center justify-center py-4 rounded-2xl bg-[#FFD21F] text-black font-black text-lg hover:bg-[#FFE66D] transition-all duration-300"
+                >
+                  View Live Results →
+                </Link>
               </div>
             )}
 
-            <button
-              onClick={handleVote}
-              disabled={submitting}
-              className="w-full mt-8 py-4 rounded-2xl bg-[#FFD21F] text-black font-black text-lg hover:bg-[#FFE66D] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? "Submitting..." : "Submit Vote →"}
-            </button>
+            {!message && (
+              <button
+                onClick={handleVote}
+                disabled={submitting}
+                className="w-full mt-8 py-4 rounded-2xl bg-[#FFD21F] text-black font-black text-lg hover:bg-[#FFE66D] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Submitting..." : "Submit Vote →"}
+              </button>
+            )}
 
             <div className="flex items-center justify-center gap-2 mt-6 text-xs text-gray-600">
               <span>⚡</span>
               Votes update instantly in real time
             </div>
+
+            <button
+              onClick={handleBack}
+              className="w-full mt-5 py-3 rounded-2xl border border-[#292929] text-gray-400 font-semibold hover:border-[#FFD21F]/50 hover:text-[#FFD21F] transition-all duration-300"
+            >
+              ← Back
+            </button>
           </div>
 
           <div className="text-center mt-8">
@@ -223,3 +261,4 @@ function Vote() {
 }
 
 export default Vote;
+
